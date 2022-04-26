@@ -11,7 +11,7 @@ library(data.table)
 #########################
 #load the data
 user_info<-read.csv("C:/Users/mikev/OneDrive - TU Eindhoven/UvT/3 & 4 - Thesis Marketing Analysis/Data/Complete books info/1 tm 82500 user info updated.csv", sep=";") #save the data in a dataframe
-all_books2<-fread("C:/Users/mikev/OneDrive/Documenten/all_books.csv") #save the data in a dataframe
+all_books2<-fread("../../data/all_books.csv") #save the data in a dataframe
 
 
 
@@ -171,8 +171,11 @@ all_books2$read_time_months<-ifelse((is.na(all_books2$date_started) | is.na(all_
 
 #################################################################################
 
+test2<- all_books2 %>% group_by(`book url`) %>% summarise(su =sum(dummy)) %>% filter(su >10)
+test3<- test2 %>% filter(su>50)
+test4<- all_books2 %>% group_by(`book title`) %>% summarise(su =sum(dummy))
 
-
+sum(test3$su)/sum(all_books2$dummy)
 
 #save the data
 dir.create("../../gen/temp")
