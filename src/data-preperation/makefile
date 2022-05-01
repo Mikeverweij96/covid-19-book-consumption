@@ -15,6 +15,13 @@ $(TEMP)/books_prepared.csv: books_data_prepare.R $(TEMP)/books_after_rescrape.cs
 	R --vanilla < books_data_prepare.R
 
 
-
 $(TEMP)/users_prepared.csv: user_data_prepare.R $(TEMP)/users_after_rescrape.csv
 	R --vanilla < user_data_prepare.R
+
+
+$(TEMP)/books_cleaned.csv $(TEMP)/users_cleaned.csv: data_clean.R $(TEMP)/users_prepared.csv $(TEMP)/books_prepared.csv
+	R --vanilla < data_clean.R
+
+
+$(TEMP)/covid_stringency_prepared.csv $(TEMP)/users_cleaned.csv: covid_data_prepare.R $(TEMP)/users_cleaned.csv $(DATA)/stringency_index.csv
+	R --vanilla < covid_data_prepare.R

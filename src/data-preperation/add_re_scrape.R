@@ -73,4 +73,3 @@ dir.create("../../gen/")
 dir.create("../../gen/temp")
 write.csv(all_books, file = "../../gen/temp/books_after_rescrape.csv", fileEncoding = "UTF-8")
 write.csv(user_info, file = "../../gen/temp/users_after_rescrape.csv", fileEncoding = "UTF-8")
-

@@ -26,7 +26,8 @@ all_books <- all_books %>% filter(!duplicated(all_books))
 #drop columns that we will not use in this thesis:
 all_books<- all_books %>% select(-V1)
 all_books<- all_books %>% select(-isbn13)
-
+all_books<- all_books %>% select(-`book title`)
+all_books<- all_books %>% select(-author_name)
 
 # changes the num_pages varaible to numeric
 all_books$num_pages<- gsub('pp', '', all_books$num_pages)
