@@ -60,7 +60,7 @@ git clone https://github.com/[your username]/covid-19-book-consumption.git
 make
 ```
 
-#### Running the data collection and amenities matrix preparation
+#### Running the data collection
 Note: Above worflow does not include the data collection steps and the combination of the scraped data file. The reason for this is two-fold. First, the data collection steps take about 3.5 months to completely run. Hence, it would not be efficient to include in the reproduction workflow. Second, since the source code of Goodreads is not static but rather dynamic, the data scraper program had to be slightly adjusted several times during the process. Therefore, the running process was cut into smaller chuncks such that we could find out about possible problems as soon as possible and could timely adjust the programm. Therefore, the data scraping software collected multiple seperate files that were later combined into larger files. 
 
 Below shows an overview of the order in which these programms were run:
