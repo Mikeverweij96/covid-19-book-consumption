@@ -262,7 +262,7 @@ abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="ye
 mtext(left_title, side=2, line=3) # add title to the left 
 
 par(new = TRUE) #add new line
-plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits) #add the covid line
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
 axis(side=4, at = pretty(range(COVID_19_stringency)))
 mtext("COVID-19 stringency", side=4, line=3)
 
@@ -270,7 +270,63 @@ par(new = TRUE)
 plot(time, type="l", lty=1, lwd=2, number_of_books_added, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
 mtext("Date (January 1st of year)", side=1, line=3)
 
-legend("topleft", inset = 0.05, legend = c("Number of books added per active user", "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+legend("topleft", inset = 0.03, legend = c("Number of books added per active user", "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+#################################################################################
+#Compare against base level 2018 & 2019
+data_18_19<-all_books_weekly_added %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg = mean(added_per_user))
+
+data_20_21 <- all_books_weekly_added %>% filter(first_day_of_week_added > "2019-12-24" & first_day_of_week_added < "2022-01-01")
+data_20_21$week<-week(data_20_21$first_day_of_week_added)
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase<- data_20_21$added_per_user/data_20_21$avg
+data_20_21$perc_increase<- data_20_21$perc_increase*100-100
+
+
+#plot
+time <- data_20_21$first_day_of_week_added
+number_of_books_added <- data_20_21$perc_increase
+COVID_19_stringency20_21 <- data_20_21$Average
+left_limits= c(0, 100)
+time_limits = c(as.Date("2020-01-01"), as.Date("2022-01-01"))
+title = "Number of books added each week per active user compared to COVID-19 stringency index"
+left_title = "% more books per user compared to 2018-2019"
+
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(time, type="n", number_of_books_added, xlab= "", ylab = "", main = title, at=seq(time_limits[1],time_limits[2], by="years") , xlim=time_limits, ylim=left_limits ) # initiate plot layout
+axis(side=2, at = pretty(range(left_limits))) # add right ticks
+abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="years"), col="grey85") # add raster
+mtext(left_title, side=2, line=3) # add title to the left 
+
+par(new = TRUE) #add new line
+plot(time, COVID_19_stringency20_21, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
+axis(side=4, at = pretty(range(COVID_19_stringency20_21)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
+mtext("Date (January 1st of year)", side=1, line=3)
+
+legend("topleft", inset = 0.02, legend = c(left_title, "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #################################################################################
 #plot books per user from 2014 onward and correct for seasonality
@@ -441,6 +497,8 @@ mtext("COVID-19 stringency", side=4, line=3)
 #create a more accurate recent publish variable:
 all_books<- all_books %>% mutate(most_recent = ifelse(!is.na(date_pub), as.numeric(difftime(date_added, date_pub, units ="days")), as.numeric(NA)))
 all_books <- all_books %>% mutate(most_recent = ifelse(most_recent < 366, 1,0))
+all_books <- all_books %>% mutate(read_time_days = ifelse(read_time_days<365, read_time_days, as.numeric(NA)))
+
 
 
 #create the dataset for the remainder of this analysis.
@@ -469,7 +527,7 @@ weekly_added_data<- weekly_added_data %>% replace(is.na(.), 0)
 #first plot (all dates)
 time <- weekly_added_data$first_day_of_week_added
 y <- weekly_added_data$av_days_per_book
-left_limits= c(0,50)
+left_limits= c(5,20)
 time_limits = c(as.Date("2014-01-01"), as.Date("2022-01-01"))
 title = "Average days to finish a book compared to COVID-19 Stringency"
 left_title = "Days per book"
@@ -485,16 +543,60 @@ mtext(left_title, side=2, line=3) # add title to the left
 
 par(new = TRUE) #add new line
 
-plot(time, y, type = "l",lwd=1, axes = FALSE, bty = "n", xlab = "", ylab = "", xlim=time_limits, ylim=left_limits) #add the covid line
+plot(time, y, type = "l",lty=1,lwd=1, axes = FALSE, bty = "n", xlab = "", ylab = "", xlim=time_limits, ylim=left_limits) #add the covid line
 
 mtext("Date (January 1st of year)", side=1, line=3)
 
 par(new = TRUE) #add new line
-plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits) #add the covid line
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
 axis(side=4, at = pretty(range(COVID_19_stringency)))
 mtext("COVID-19 stringency", side=4, line=3)
 
-legend("topleft", inset = 0.05, legend = c(left_title, "COVID-19 Stringency"), lty=c(1,2), col=c("black","darkgrey"), lwd =2, bg="white")
+legend("topleft", inset = 0.03, legend = c(left_title, "COVID-19 Stringency"), lty=c(1,2), col=c("black","darkgrey"), lwd =2, bg="white")
+
+#################################################################################
+
+#Compare against base level 2018 & 2019
+data_18_19<-weekly_added_data %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg = mean(av_days_per_book))
+
+data_20_21 <- weekly_added_data %>% filter(first_day_of_week_added > "2019-12-24" & first_day_of_week_added < "2022-01-01")
+data_20_21$week<-week(data_20_21$first_day_of_week_added)
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase<- data_20_21$av_days_per_book/data_20_21$avg
+data_20_21$perc_increase<- data_20_21$perc_increase*100-100
+
+
+#plot
+time <- data_20_21$first_day_of_week_added
+number_of_books_added <- data_20_21$perc_increase
+COVID_19_stringency20_21 <- data_20_21$Average
+left_limits= c(-20, 20)
+time_limits = c(as.Date("2020-01-01"), as.Date("2021-01-01"))
+title = "Number of books added each week per active user compared to COVID-19 stringency index"
+left_title = "% change days to finish a book compared to 2018-2019"
+
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(time, type="n", number_of_books_added, xlab= "", ylab = "", main = title, at=seq(time_limits[1],time_limits[2], by="years") , xlim=time_limits, ylim=left_limits ) # initiate plot layout
+axis(side=2, at = pretty(range(left_limits))) # add right ticks
+abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="years"), col="grey85") # add raster
+mtext(left_title, side=2, line=3) # add title to the left 
+
+par(new = TRUE) #add new line
+plot(time, COVID_19_stringency20_21, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
+axis(side=4, at = pretty(range(COVID_19_stringency20_21)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
+mtext("Date (2020)", side=1, line=3)
+
+legend("topleft", inset = 0.02, legend = c(left_title, "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+
 
 #################################################################################
 ################################################################################
@@ -534,7 +636,7 @@ legend("topleft", inset = 0.05, legend = c(left_title, "COVID-19 Stringency"), l
 #################################################################################
 ################################################################################
 #################################################################################
-#plot average number of pages per day
+#plot average rating per book
 
 #first plot (all dates)
 time <- weekly_added_data$first_day_of_week_added
@@ -560,11 +662,71 @@ plot(time, y, type = "l",lwd=1, axes = FALSE, bty = "n", xlab = "", ylab = "", x
 mtext("Date (January 1st of year)", side=1, line=3)
 
 par(new = TRUE) #add new line
-plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits) #add the covid line
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
 axis(side=4, at = pretty(range(COVID_19_stringency)))
 mtext("COVID-19 stringency", side=4, line=3)
 
-legend("topleft", inset = 0.05, legend = c(left_title, "COVID-19 Stringency"), lty=c(1,2), col=c("black","darkgrey"), lwd =2, bg="white")
+legend("topleft", inset = 0.03, legend = c(left_title, "COVID-19 Stringency"), lty=c(1,2), col=c("black","darkgrey"), lwd =2, bg="white")
+
+
+################################################################################
+#Compare against base level 2018 & 2019
+data_18_19<-weekly_added_data %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg = mean(av_rating))
+
+data_20_21 <- weekly_added_data %>% filter(first_day_of_week_added > "2019-12-24" & first_day_of_week_added < "2022-01-01")
+data_20_21$week<-week(data_20_21$first_day_of_week_added)
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase<- data_20_21$av_rating/data_20_21$avg
+data_20_21$perc_increase<- data_20_21$perc_increase*100-100
+
+
+#plot
+time <- data_20_21$first_day_of_week_added
+number_of_books_added <- data_20_21$perc_increase
+COVID_19_stringency20_21 <- data_20_21$Average
+left_limits= c(-0.5, 4)
+time_limits = c(as.Date("2020-01-01"), as.Date("2022-01-01"))
+title = "Number of books added each week per active user compared to COVID-19 stringency index"
+left_title = "% change book rating compared to 2018-2019"
+
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(time, type="n", number_of_books_added, xlab= "", ylab = "", main = title, at=seq(time_limits[1],time_limits[2], by="years") , xlim=time_limits, ylim=left_limits ) # initiate plot layout
+axis(side=2, at = pretty(range(left_limits))) # add right ticks
+abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="years"), col="grey85") # add raster
+mtext(left_title, side=2, line=3) # add title to the left 
+
+par(new = TRUE) #add new line
+plot(time, COVID_19_stringency20_21, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
+axis(side=4, at = pretty(range(COVID_19_stringency20_21)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
+mtext("Date (January 1st of year)", side=1, line=3)
+
+legend("topleft", inset = 0.02, legend = c(left_title, "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #################################################################################
@@ -596,11 +758,77 @@ plot(time, y, type = "l",lwd=1, axes = FALSE, bty = "n", xlab = "", ylab = "", x
 mtext("Date (January 1st of year)", side=1, line=3)
 
 par(new = TRUE) #add new line
-plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits) #add the covid line
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
 axis(side=4, at = pretty(range(COVID_19_stringency)))
 mtext("COVID-19 stringency", side=4, line=3)
 
 legend("topleft", inset = 0.05, legend = c(left_title, "COVID-19 Stringency"), lty=c(1,2), col=c("black","darkgrey"), lwd =2, bg="white")
+
+################################################################################
+#Compare against base level 2018 & 2019
+data_18_19<-weekly_added_data %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg = mean(av_pages_per_book))
+
+data_20_21 <- weekly_added_data %>% filter(first_day_of_week_added > "2019-12-24" & first_day_of_week_added < "2022-01-01")
+data_20_21$week<-week(data_20_21$first_day_of_week_added)
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase<- data_20_21$av_pages_per_book/data_20_21$avg
+data_20_21$perc_increase<- data_20_21$perc_increase*100-100
+
+
+#plot
+time <- data_20_21$first_day_of_week_added
+number_of_books_added <- data_20_21$perc_increase
+COVID_19_stringency20_21 <- data_20_21$Average
+left_limits= c(-5,10)
+time_limits = c(as.Date("2020-01-01"), as.Date("2022-01-01"))
+title = "Number of books added each week per active user compared to COVID-19 stringency index"
+left_title = "% change book length compared to 2018-2019"
+
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(time, type="n", number_of_books_added, xlab= "", ylab = "", main = title, at=seq(time_limits[1],time_limits[2], by="years") , xlim=time_limits, ylim=left_limits ) # initiate plot layout
+axis(side=2, at = pretty(range(left_limits))) # add right ticks
+abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="years"), col="grey85") # add raster
+mtext(left_title, side=2, line=3) # add title to the left 
+
+par(new = TRUE) #add new line
+plot(time, COVID_19_stringency20_21, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
+axis(side=4, at = pretty(range(COVID_19_stringency20_21)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
+mtext("Date (January 1st of year)", side=1, line=3)
+
+legend("topleft", inset = 0.02, legend = c(left_title, "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #################################################################################
 ################################################################################
@@ -689,13 +917,12 @@ legend("topleft", inset = 0.05, legend = c(left_title, "COVID-19 Stringency"), l
 time <- weekly_added_data$first_day_of_week_added
 y <- weekly_added_data$perc_nostalgic
 y2 <- weekly_added_data$perc_recent
-y3 <- weekly_added_data$perc_re_read
 
 
-left_limits= c(0,0.6)
+left_limits= c(0.1,0.6)
 time_limits = c(as.Date("2014-01-01"), as.Date("2022-01-01"))
 title = "Fractile of nostalgic, recent and re-read books compared to COVID-19 stringency"
-left_title = "Fractile of books"
+left_title = "Proportion of books"
 
 
 
@@ -710,17 +937,113 @@ par(new = TRUE) #add new line
 plot(time, y, type = "l",lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", xlim=time_limits, ylim=left_limits) #add the covid line
 par(new = TRUE) #add new line
 plot(time, y2, type = "l",lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", xlim=time_limits, ylim=left_limits, col = "grey55") #add the covid line
-par(new = TRUE) #add new line
-plot(time, y3, type = "l",lwd=2, lty=4,  axes = FALSE, bty = "n", xlab = "", ylab = "", xlim=time_limits, ylim=left_limits) #add the covid line
 
 mtext("Date (January 1st of year)", side=1, line=3)
 
 par(new = TRUE) #add new line
-plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits) #add the covid line
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
 axis(side=4, at = pretty(range(COVID_19_stringency)))
 mtext("COVID-19 stringency", side=4, line=3)
 
-legend("topleft", inset = 0.05, legend = c("Nostalgic books", "Recent publishes", "Re-read books", "COVID-19 Stringency"), lty=c(1,1,4,2), col=c("black","grey55", "black", "darkgrey"), lwd =2, bg="white")
+legend("topleft", inset = 0.02, legend = c("Nostalgic books", "Recent publishes", "COVID-19 Stringency"), lty=c(1,1,2), col=c("black","grey55", "darkgrey"), lwd =2, bg="white")
+
+
+#################################################################################
+#Compare against base level 2018 & 2019
+data_18_19<-weekly_added_data %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg_n = mean(perc_nostalgic))
+
+data_20_21 <- weekly_added_data %>% filter(first_day_of_week_added > "2019-12-24" & first_day_of_week_added < "2022-01-01")
+data_20_21$week<-week(data_20_21$first_day_of_week_added)
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase_n<- data_20_21$perc_nostalgic-data_20_21$avg_n
+data_20_21$perc_increase_n<- data_20_21$perc_increase_n*100
+
+
+
+data_18_19<-weekly_added_data %>% filter(first_day_of_week_added > "2017-12-24" & first_day_of_week_added < "2020-01-01")
+data_18_19 <- data_18_19 %>% mutate(week = week(first_day_of_week_added)) %>% group_by(week)%>% summarise(avg_r = mean(perc_recent))
+
+
+data_20_21<- data_20_21 %>% left_join(data_18_19, by='week')
+data_20_21$perc_increase_r<- data_20_21$perc_recent-data_20_21$avg_r
+data_20_21$perc_increase_r<- data_20_21$perc_increase_r*100
+
+
+
+
+
+
+
+#plot
+time <- data_20_21$first_day_of_week_added
+number_of_books_added_n <- data_20_21$perc_increase_n
+number_of_books_added_r <- data_20_21$perc_increase_r
+
+COVID_19_stringency20_21 <- data_20_21$Average
+left_limits= c(-5,8)
+time_limits = c(as.Date("2020-01-01"), as.Date("2022-01-01"))
+title = "Number of books added each week per active user compared to COVID-19 stringency index"
+left_title = "% change what is read compared to 2018-2019"
+left_title_r = "% change recent books compared to 2018-2019"
+left_title_n = "% change nostalgic books compared to 2018-2019"
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(time, type="n", number_of_books_added_n, xlab= "", ylab = "", main = title, at=seq(time_limits[1],time_limits[2], by="years") , xlim=time_limits, ylim=left_limits ) # initiate plot layout
+axis(side=2, at = pretty(range(left_limits))) # add right ticks
+abline(h=pretty(range(left_limits)), v=seq(time_limits[1],time_limits[2], by="years"), col="grey85") # add raster
+mtext(left_title, side=2, line=3) # add title to the left 
+
+par(new = TRUE) #add new line
+plot(time, COVID_19_stringency20_21, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey" , xlim=time_limits, ylim=c(0,100)) #add the covid line
+axis(side=4, at = pretty(range(COVID_19_stringency20_21)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added_n, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits)
+mtext("Date (January 1st of year)", side=1, line=3)
+
+par(new = TRUE)
+plot(time, type="l", lty=1, lwd=2, number_of_books_added_r, xlab= "", ylab = "", xlim=time_limits, ylim=left_limits, col='darkgrey')
+mtext("Date (January 1st of year)", side=1, line=3)
+
+
+
+
+legend("topleft", inset = 0.02, legend = c(left_title_n,left_title_r, "COVID-19 Stringency"), lty=c(1,1,2), col=c("black","darkgray","darkgray"), lwd =2, bg="white")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #################################################################################
 #################################################################################
@@ -749,11 +1072,70 @@ weekly_added_per_user2<- weekly_added_per_user %>% leftjoin(user_info_to_add, by
 
 
 
-#Wat we ook kunnen doen: kijke naar verhouding of die verschilt, daarmee zie je of effect sterker is voor de een of voor de ander.
-# dit dan met zo'n 100% balk op elkaar en dan zoeken naar verschuiving. 
-#For the different effects per demographic group:
-#only apply number of books added compared to weekly mean,
-# with 3 lines for age in 1 plot
-# 4 x 8 plots voor Nationality
-# with 2 lines for gender
-# with 2 lines for active vs non-active readers.
+
+
+
+
+#################################################################################
+# days to finish books filtered for books finished within a year.
+
+all_books_read_time<-all_books %>% filter(read_time_days<365)
+
+
+all_books_read_time <- all_books_read_time %>% group_by(first_day_of_week_added) %>% summarise(mn= mean(read_time_days),md=median(read_time_days))
+
+
+all_books_read_time<- all_books_read_time %>% filter(first_day_of_week_added>"2013-12-21" & first_day_of_week_added<"2021-01-01")
+
+
+#add the covid stringencies
+covid_stringency<-covid_stringency %>% select(first_day_of_week, Average)
+all_books_read_time <- all_books_read_time %>% left_join(covid_stringency, by=c("first_day_of_week_added" = "first_day_of_week"))
+
+# fill the NAs with 0
+all_books_read_time<- all_books_read_time %>% replace(is.na(.), 0)
+
+
+#################################################################################
+#first plot (total number of books added against all dates)
+time <- all_books_read_time$first_day_of_week_added
+read_time <- all_books_read_time$mn
+## second data set on a very different scale
+COVID_19_stringency <- all_books_read_time$Average
+
+
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+
+
+plot(time, type="l", read_time, ylim=c(10.5,19), , xlab= "", ylab = "", main = "Average number of days before finishing book compared to COVID-19 stringency index",
+     
+     at=c(as.Date("2007-01-01"),as.Date("2008-01-01"),as.Date("2009-01-01"),as.Date("2010-01-01"),as.Date("2011-01-01"),as.Date("2012-01-01"),as.Date("2013-01-01"),as.Date("2014-01-01"),as.Date("2015-01-01"),as.Date("2016-01-01"),as.Date("2017-01-01"),
+          as.Date("2018-01-01"), as.Date("2019-01-01"),as.Date("2020-01-01"),as.Date("2021-01-01"),as.Date("2022-01-01"))
+) # first plot
+axis(side=2, at = c(10,11,12,13,14,15,16,17,18,19))
+
+abline(h=c(10,11,12,13,14,15,16,17,18,19), v=c(as.Date("2007-01-01"),as.Date("2008-01-01"),as.Date("2009-01-01"),as.Date("2010-01-01"),as.Date("2011-01-01"),as.Date("2012-01-01"),as.Date("2013-01-01"),as.Date("2014-01-01"),as.Date("2015-01-01"),as.Date("2016-01-01"),as.Date("2017-01-01"),
+                                                   as.Date("2018-01-01"), as.Date("2019-01-01"),as.Date("2020-01-01"),as.Date("2021-01-01"),as.Date("2022-01-01"))
+       , col="grey85")
+
+
+mtext("# days to finish book", side=2, line=3)
+par(new = TRUE)
+plot(time, COVID_19_stringency, type = "l", lty=2,lwd=2, axes = FALSE, bty = "n", xlab = "", ylab = "", col="darkgrey")
+axis(side=4, at = pretty(range(COVID_19_stringency)))
+mtext("COVID-19 stringency", side=4, line=3)
+
+par(new = TRUE)
+plot(time, ylim=c(10.5,19),type="l", lwd=1.5, read_time, xlab= "", ylab = "")
+mtext("Date (January 1st of year)", side=1, line=3)
+
+
+legend("topleft", inset = 0.05, legend = c("Average number of days to finish book", "COVID-19 Stringency"), lty=1:2, col=c("black","darkgray"), lwd =2, bg="white")
+
+
+
+
+
+
+
+

@@ -27,7 +27,7 @@ driver.get('https://www.google.com/')
 goodreads_url= "https://www.goodreads.com"
 
 #Secondly, start with importing the users
-User_list = pd.read_csv('C:/Users/mikev/OneDrive/Documenten/Users_re_scrape.csv', encoding='latin1', sep=';')
+User_list = pd.read_csv('user_info_complete.csv', encoding='latin1', sep=';')
 
 
 if 'Nr_Books_scraped' not in User_list: #For your first run you want to add the extra columns to the dataset. 
