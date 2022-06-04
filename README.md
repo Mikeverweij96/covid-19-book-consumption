@@ -8,6 +8,19 @@ In my thesis, I have investigated how COVID-19 restrictions have affected the am
 ##Data Description
 To investigate the impact of COVID-19 restrictions on book consumption, we use data scraped from the reading community website Goodreads. We collected 18,252,877 book reading records from 112,087 unique Goodreads users that were found via the 31 largest country-specific subgroups on Goodreads. Our dataset covers the consumption of books over a 15-year timeframe, including almost two years after the outbreak of COVID-19. 
 
+
+## Repository overview
+
+```
+├── README.md
+├── makefile
+└── src
+    ├── analysis
+    ├── data-collection
+    ├── data-preparation
+    └── pricing-app
+```
+
 ## Dependencies
 Please follow the installation guide on http://tilburgsciencehub.com/.
 
