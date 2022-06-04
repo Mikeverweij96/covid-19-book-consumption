@@ -1,2 +1,2 @@
-# Influence-of-COVID-19-on-Bookreading-behaviour
-This MSc Thesis project examines the influence of COVID-19 on book reading behaviour. 
+# Impact of COVID-19 Restrictions on Book Consumption
+This repository contains the workflow of my master thesis [The Impact of COVID-19 Restrictions on Book Consumption](link)
