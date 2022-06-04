@@ -52,7 +52,9 @@ Follow below instructions to run the code:
 ```
 git clone https://github.com/[your username]/covid-19-book-consumption.git
 ```
-3.  Make sure your current working direcotry is ```covid-19-book-consumption````:
+3.  Make sure your current working direcotry is `covid-19-book-consumption`
+4.  If not, type `cd yourpath/covid-19-book-consumption` to change your directory
+5.  Execute following command to execute the workflow:
 
 ```
 make
