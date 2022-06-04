@@ -80,7 +80,11 @@ Note: Above worflow does not include the data collection steps and the combinati
 Below shows an overview of the order in which these programms were run:
 - ../src/data-collection -> large_country_scraper.py (runs one country at a  time)
 - ../src/data-collection -> small_countries_scraper.py (runs all countries with <3,000 members at once)
-- ../src/data-collection -> 
+- merge the scraped country files into one file and save it as 'all_users.csv'
+- ../src/data-collection -> user_info_scraper.py (scrapes the detailed user info of all user accounts)
+- ../src/user_info_clean.R (remove users that we cannot scrape, i.e. private users and authors)
+- ../src/data-collection -> books_scraper.py (scrapes all books of the publicly available users)
+
 
 ## Author
 
