@@ -75,10 +75,12 @@ Another option will be to run all code in the following order:
 
 
 #### Running the data collection and amenities matrix preparation
-Note: Above worflow does not include the data collection steps and the preparation of the amenities matrix. Running these steps typically takes around 20 hours in total. Therefore, the output files of these two steps are stored on our shared google drive folder, from which they are downloaded in the data_preparation.R file. If one is interested in running these steps too, one should run below files in the following order:
-- ../src/data-collection -> Inside_Airbnb_link_scraper.py
-- ../src/data-collection -> data_download.R
-- ../src/data-preparation -> ammenities_matrix.R
+Note: Above worflow does not include the data collection steps and the combination of the scraped data file. The reason for this is two-fold. First, the data collection steps take about 3.5 months to completely run. Hence, it would not be efficient to include in the reproduction workflow. Second, since the source code of Goodreads is not static but rather dynamic, the data scraper program had to be slightly adjusted several times during the process. Therefore, the running process was cut into smaller chuncks such that we could find out about possible problems as soon as possible and could timely adjust the programm. Therefore, the data scraping software collected multiple seperate files that were later combined into larger files. 
+
+Below shows an overview of the order in which these programms were run:
+- ../src/data-collection -> large_country_scraper.py (runs one country at a  time)
+- ../src/data-collection -> small_countries_scraper.py (runs all countries with <3,000 members at once)
+- ../src/data-collection -> 
 
 ## Author
 
