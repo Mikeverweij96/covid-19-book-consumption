@@ -39,16 +39,8 @@ pip install selenium
 - For R, make sure you have installed below packages:
 ```
 install.packages("tidyverse")
-install.packages("ggfortify")
-install.packages("yaml")
-install.packeges("shiny")
 install.packages("googledrive")
-install.packages("tidypredict")
-install.packages("car")
-install.packages("base")
 install.packages("data.table")
-install.packages("broom")
-install.packages("haven")
 install.packages("readxl")
 ```
 
@@ -58,23 +50,17 @@ Follow below instructions to run the code:
 2. Open your command line/terminal:
 
 ```
-git clone https://github.com/[your username]/Airbnb-pricing.git
+git clone https://github.com/[your username]/covid-19-book-consumption.git
 ```
-3. To directly run all code use the following command in your directory "airbnb-pricing":
+3.  Make sure your current working direcotry is `covid-19-book-consumption`
+4.  If not, type `cd yourpath/covid-19-book-consumption` to change your directory
+5.  Execute following command to execute the workflow:
 
 ```
 make
 ```
-4. After running all code a http link is generated. Copy paste this link in your browser to launch the app.
-    Note: do not close/terminate the command line/terminal before you are finished with using the app. When the command line/terminal is closed and/or stops running, the website will not be available anymore.
 
-Another option will be to run all code in the following order:
-- ../src/data-preparation -> data_preparation.R
-- ../src/analysis -> regression.R
-- ../src/pricing-app -> pricing_app.R
-
-
-#### Running the data collection and amenities matrix preparation
+#### Running the data collection
 Note: Above worflow does not include the data collection steps and the combination of the scraped data file. The reason for this is two-fold. First, the data collection steps take about 3.5 months to completely run. Hence, it would not be efficient to include in the reproduction workflow. Second, since the source code of Goodreads is not static but rather dynamic, the data scraper program had to be slightly adjusted several times during the process. Therefore, the running process was cut into smaller chuncks such that we could find out about possible problems as soon as possible and could timely adjust the programm. Therefore, the data scraping software collected multiple seperate files that were later combined into larger files. 
 
 Below shows an overview of the order in which these programms were run:
