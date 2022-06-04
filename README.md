@@ -5,7 +5,7 @@ In my thesis, I have investigated how COVID-19 restrictions have affected the am
 
 ![image](https://user-images.githubusercontent.com/90783740/172004153-8f8bd9f6-b5d4-46be-b173-8e4a027c8ce9.png)
 
-##Data Description
+## Data Description
 To investigate the impact of COVID-19 restrictions on book consumption, we use data scraped from the reading community website Goodreads. We collected 18,252,877 book reading records from 112,087 unique Goodreads users that were found via the 31 largest country-specific subgroups on Goodreads. Our dataset covers the consumption of books over a 15-year timeframe, including almost two years after the outbreak of COVID-19. 
 
 
