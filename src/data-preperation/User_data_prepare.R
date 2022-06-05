@@ -9,12 +9,12 @@ library(data.table)
 #########################
 ### DATA PREPARATION ####
 #########################
-#Load the data
+# load the data
 user_info<-fread("../../gen/temp/users_after_rescrape.csv") #save the data in a dataframe
 
 
 ################################################################################
-#remove columns that we will not use for this thesis
+# remove columns that we will not use for this thesis
 user_info<- user_info %>% select(-V1)
 user_info<- user_info %>% select(-`Unnamed: 0`)
 user_info<- user_info %>% select(-User.Name)
@@ -31,7 +31,7 @@ user_info <- user_info %>% mutate(user_id = gsub('https://www.goodreads.com/user
 
 
 #################################################################################
-#compare the nmber of books scraped (somewhere in February or March) to the number of books that were on the user profile in the beginning of January:
+#compare the number of books scraped (somewhere in February or March) to the number of books that were on the user profile in the beginning of January:
 user_info$perc_scraped<-user_info$Nr_Books_in_data/user_info$Nr.Books.Read
 
 #inspect how the number of books changed between scraping the user page and book shelf:
@@ -68,12 +68,6 @@ print(paste0('We find ', nrow(Age) ,' users with their age defined.'))
 
 # some summary statistics about the ages of the users in the data set:
 print(summary(Age$Age))
-
-# we remove all ages >120 years and <18 (These are in total 9 users)
-user_info$Age <- as.numeric(user_info$Age)
-user_info$Age[user_info$Age>120 | user_info$Age<18]<-NA
-#then we have the following statistics about age:
-print(summary(user_info$Age))
 
 
 #extract the gender from the details:
@@ -164,67 +158,6 @@ for (month in 1:nrow(user_active)){
   
 }
 plot(user_active$Joined, user_active$active)
-
-
-################################################################################
-#active users per country
-countries<- user_info %>% group_by(Country) %>% summarise(sum(dummy)) %>% select(Country)
-
-for (country in 1:nrow(countries)){
-  country_text<-countries$Country[country]
-  
-
-  users_joined_monthly_country <- user_info %>% filter(Country == country_text) %>% group_by(Joined) %>% summarize(join=sum(dummy))
-  
-  users_last_monthly_country <- user_info %>% filter(Country == country_text) %>% group_by(Last) %>% summarize(leave=sum(dummy))
-  users_last_monthly_country$Last <- gsub('28', '01', users_last_monthly_country$Last)
-  users_last_monthly_country$Last<-as.Date(users_last_monthly_country$Last)
-  
-  user_active_country<- users_joined_monthly_country %>% full_join(users_last_monthly_country, by = c("Joined" = "Last"))
-  user_active_country$leave <- ifelse(is.na(user_active_country$leave), 0, user_active_country$leave)
-  user_active_country$join <- ifelse(is.na(user_active_country$join), 0, user_active_country$join)
-  
-  
-  #compute the number of active users in a month:
-  user_active_country$active<-0
-  user_active_country<- user_active_country %>% arrange(Joined)
-  for (month in 1:nrow(user_active_country)){
-    if (month ==1){
-      user_active_country$active[month]<- user_active_country$join[month]-user_active_country$leave[month]
-    }
-    if (month>1){
-      user_active_country$active[month]<-user_active_country$active[month-1] +user_active_country$join[month]-user_active_country$leave[month]
-    }
-    
-    
-  }
-
-
-  user_active_country<-user_active_country %>% select(Joined, active)
-  
-  colnames(user_active_country)[which(colnames(user_active_country)=='Joined')] <- 'Joined_country'
-  
-  user_active<- user_active %>% left_join(user_active_country, by=c("Joined"= "Joined_country"), suffix= c("", country_text))
-  
-}
-
-
-# fill the NA's 
-for (coll in 2:ncol(user_active)){
-  
-  for (ro in 1:nrow(user_active)){
-    if (ro ==1){
-      user_active[ro,coll]<-ifelse(is.na(user_active[ro,coll]), 0, user_active[ro,coll])
-    }
-    if (ro>1){
-      user_active[ro,coll]<-ifelse(is.na(user_active[ro,coll]), user_active[ro-1,coll], user_active[ro,coll])
-    }
-    
-  }
-  
-  
-  
-}
 
 #################################################################################
 #Change the number of ratings, average rating and number of reviews to numeric

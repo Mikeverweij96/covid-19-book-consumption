@@ -13,15 +13,35 @@ library(data.table)
 user_info<-fread("../../gen/temp/users_prepared.csv") #save the data in a dataframe
 all_books<-fread("../../gen/temp/books_prepared.csv") #save the data in a dataframe
 
+################################################################################
+# set the variables to the correct formats
+all_books$date_started<- as.Date(all_books$date_started)
+all_books$date_read<- as.Date(all_books$date_read)
+all_books$date_added<- as.Date(all_books$date_added)
+all_books$date_pub<- as.Date(all_books$date_pub)
+all_books$date_started_month<- as.Date(all_books$date_started_month)
+all_books$date_read_month<- as.Date(all_books$date_read_month)
+user_info$Joined<- as.Date(user_info$Joined)
+user_info$Last<- as.Date(user_info$Last)
+
+
 #################################################################################
-#inspect the data for weird values
+#inspect the user info data for weird values
 summary(user_info)
-#we  see that we have negative number of comments, we see some very big numbers for number of ratings, reviews and books read. 
+# we  see that we have negative number of comments, we see some very big numbers for number of ratings, reviews and books read. 
 # it seems that the number of friends is bound to 999 and we have no-one with zero friends (these are the NA's). 
-# we see someone who is 115, we need to inspect this. 
-# we see that we still have people who joined after december 2021, these should be removed. 
+# we see someone who is 2021 years old, which cearly is infeasible
+# we see that we have people who joined after december 2021, these should be removed. 
+
 #################################################################################
-# We start with inspecting the negative number of comments
+# we remove all ages >99 years and <18 
+user_info$Age <- as.numeric(user_info$Age)
+user_info$Age[user_info$Age>99 | user_info$Age<18]<-NA
+# then we have the following statistics about age:
+print(summary(user_info$Age))
+
+#################################################################################
+# next, we inspect the negative number of comments
 Negative_comments<- user_info %>% filter(Nrments <0)
 #we see that there are 8 users with negative comments. #We will inspect the user pages of these people.
 #we see that these people really have negative comments in the groups. We assume this is a bug and set the Nr comments to zero for these people.
@@ -55,10 +75,10 @@ books_per_day<- all_books %>% group_by(`reader id`, date_added) %>% summarise(to
 
 first_day <- books_per_day %>% group_by(`reader id`) %>% arrange(date_added) %>% filter(row_number()==1)
 
-#now, lets see if our assumption holds
+# now, lets see if our assumption holds
 mean(books_per_day$total)
 mean(first_day$total)
-#hence, our assumption holds. We see that on an average active day, users add 2.48 books to their shelf, while on their first active day they add 22.75 books to their shelf.
+# hence, our assumption holds. We see that on an average active day, users add 2.48 books to their shelf, while on their first active day they add 22.75 books to their shelf.
 # therefore, as a next step, we remove all books that were added on the first day, to limit the risk for recall bias. 
 first_day$delete<-paste0(as.character(first_day$`reader id`), as.character(first_day$date_added))
 all_books$delete<-paste0(as.character(all_books$`reader id`), as.character(all_books$date_added))
@@ -76,7 +96,7 @@ user_info <- user_info %>% left_join(books_per_user, by = c("user_id"= "reader_i
 #remove users from user info for which we no longer have any books (i.e. the users that only added books on one day)
 user_info <- user_info %>% filter(total >0)
 
-#now again, we are going to inspect the number of books read per active day.
+# now again, we are going to inspect the number of books read per active day.
 user_info$books_per_day <- user_info$total / user_info$days_active
 summary(user_info$books_per_day)
 #we find that on average, people read 0.079 books per day. However, we also have someone who has 33,74 books in a day. 
@@ -85,7 +105,7 @@ Many_books_per_day <- user_info %>% filter(books_per_day>1)
 
 only_one_months_many_books <- Many_books_per_day %>% filter(days_active <31)
 nrow(only_one_months_many_books)/nrow(Many_books_per_day)
-#still, 12.3% of users in this set was active for less than a month. This is however much better than the 42% we found previously.
+# still, 12.3% of users in this set was active for less than a month. This is however much better than the 42% we found previously.
 # Moreover, the amount of users with more than 1 book per active day ar elimited to 358 users, only 0.36 % of all users. 
 # To not be too restrictive, we decide that 2 books per active day is the limit we accept as feasible. Hence, we remove all users with more books than that.
 user_to_remove<- user_info %>% filter(books_per_day >2)
@@ -102,16 +122,8 @@ user_info <- user_info %>% filter(!(user_id %in% user_to_remove$user_id))
 summary(user_info)
 # the number of books in the data for one user is now maximum 8215. We assume this is feasible.
 
-#we will now inspect the very 'old' readers, i.e. everyone above 98:
-old_readers<- user_info %>% filter(Age >100)
-#these are only 15 readers. we will inspect their user profiles and try to find out if their age is reasonable
-# based on profile pictures, writing style of reviews and general interests, all 15 users appear to be younger than 50 years.
-# it seems that all users above 100 indicated to be around 99 / 100 years old when signing up. This is likely a typical age you give when you do not really want to register your age.
-# hence, they are most likely not older than 100. Therefore, we set their ages to NA.
-user_info <- user_info %>% mutate(Age = ifelse(Age >100 , as.numeric(NA), Age))
-
 #################################################################################
-#next, we will deal with removing data from 2022, since we strated scraping at 1-1-2022, we set 31-12-2021 as the last date of our interest. 
+# next, we will deal with removing data from 2022, since we started scraping at 1-1-2022, we set 31-12-2021 as the last date of our interest. 
 # everything that happened after this date will be a bit biased, due to the 3 months of data collection.
 all_books<- all_books %>% filter(date_added < "2022-01-01")
 summary(all_books)
@@ -139,43 +151,59 @@ all_books<- all_books %>% filter(!(date_started_month < "2007-01-01") | is.na(da
 all_books<- all_books %>% filter(!(date_read_month < "2007-01-01") | is.na(date_read_month))
 
 summary(all_books)
+
+
+
+
+
+# check the dates for values that are not possible
+all_books<-all_books %>% mutate(date_started = fifelse(date_started<"1901-01-01" | date_started>"2022-5-5", as.Date(NA), date_started))
+all_books<-all_books %>% mutate(date_started_month = fifelse(date_started_month<"1901-01-01" | date_started_month>"2022-5-5", as.Date(NA), date_started_month))
+
+
+all_books<-all_books %>% mutate(date_read = fifelse(date_read<"1901-01-01" | date_read>"2022-5-5", as.Date(NA), date_read))
+all_books<-all_books %>% mutate(date_read_month = fifelse(date_read_month<"1901-01-01" | date_read_month>"2022-5-5", as.Date(NA), date_read_month))
+
+all_books<-all_books %>% mutate(date_pub = fifelse(date_pub>"2022-5-5", as.Date(NA), date_pub))
+all_books<-all_books %>% mutate(year_pub = fifelse(year_pub>2022, as.numeric(NA), year_pub))
+
+# We find out that 1500 records have a negative read time. 
+# After inspecting a sample of these records, it seems that this is an issue that occurs if a reader adds a book for the second time bus does not (correctly) register both start and end dates.
+# We decide to remove the dates of these records, as we assume that they are not reliable. 
+all_books<- all_books %>% mutate(date_started = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.Date(NA), date_started))
+all_books<- all_books %>% mutate(date_read = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.Date(NA), date_read))
+all_books<- all_books %>% mutate(date_started_month = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.Date(NA), date_started_month))
+all_books<- all_books %>% mutate(date_read_month = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.Date(NA), date_read_month))
+all_books<- all_books %>% mutate(read_time_days = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.numeric(NA), read_time_days))
+all_books<- all_books %>% mutate(read_time_months = fifelse((read_time_days<0 & !is.na(read_time_days)) | (read_time_months<0 & !is.na(read_time_months)), as.numeric(NA), read_time_months))
+
+
+
+
+
+# set odd number of pages to NA (we assume there are no books with no pages or books with more than 10.000 pages, as this would be more than two times all harry potter books)
+all_books<-all_books %>% mutate(num_pages = ifelse(num_pages > 9999 | num_pages <1, NA, num_pages))
+
+
+
 ################################################################################
 #operationalization of variables
-#reading pace
-#pages per day read:
-all_books<- all_books %>% mutate(pages_per_day = ifelse(is.na(read_time_days), num_pages/(read_time_months+1), num_pages/(read_time_days+1)))
 
-summary(all_books)
-#we see that some read lots of pages per day, which is not realisticly.
-# we find that a quick reader can read 60 pages in one hour. 
-# assuming that an individual will at least sleep 6 hours a day, we set the maximum number of feasible pages per day to 1080.
-many_pages_per_day<- all_books %>% filter(pages_per_day>1080)
-
-# it appears that many of these were read so fast because only the month started and finished were present and wee initially set the days reading to 0.
-# this is obviously not realistic. We therefore examine how many days on average a reader takes to read a book, when they read within a month:
-fast_books<- all_books %>% filter(read_time_days <31)
-summary(fast_books$read_time_days)
-#We find that the mean is 5.294 days. Hence, we add 5 days to the read times months if this was only based on months.
-all_books<- all_books %>% mutate(read_time_months = ifelse(is.na(read_time_days), ifelse(read_time_months == 0, 5, read_time_months), read_time_months))
-
-#we compute the pages per day again
-all_books<- all_books %>% mutate(pages_per_day = ifelse(is.na(read_time_days), num_pages/(read_time_months+1), num_pages/(read_time_days+1)))
-
-all_books<- all_books %>% mutate(pages_per_day = ifelse(pages_per_day >1080, as.numeric(NA), pages_per_day))
-
-
-# to operationalize the 'nostalgic' lable, we compute how many years after publication one started reading. If not avaiable, we use the year of adding.
+# to operationalize the 'nostalgic' label, we compute how many years after publication one started reading. If not available, we use the year of adding.
 all_books <- all_books %>% mutate(age_of_book = ifelse(!is.na(date_started_month), year(date_started_month)-year_pub, year(date_added)-year_pub))
 summary(all_books$age_of_book)
-#some books appear to be published after adding. We see this as infeasible, and remove the age of books for these books.
+#some books appear to be published after adding. We see this as unfeasible, and remove the age of books for these books.
 all_books <- all_books %>% mutate(age_of_book = ifelse( age_of_book<0, as.numeric(NA), age_of_book))
 
 
-#lets say, between 10 and 80 years nostalgic? 
+#lets say, between 10 and 80 years a book is nostalgic 
 all_books <- all_books %>% mutate(nostalgic = ifelse(age_of_book > 9 & age_of_book <81, 1, 0))
 
-#lets say, recent publications are 1 or 0 years old
-all_books <- all_books %>% mutate(recent = ifelse(age_of_book <2, 1, 0))
+#lets say, recent publications are between 1 or 0 years old. We only base this on the exact date a book is published.
+all_books <- all_books %>% mutate(age_of_book_exact = ifelse(!is.na(date_started_month), as.numeric(difftime(date_started_month, date_pub, units='days')), as.numeric(difftime(date_added, date_pub, units='days'))))
+#some books appear to be published after adding. We see this as unfeasible, and remove the age of books for these books.
+all_books <- all_books %>% mutate(age_of_book_exact = ifelse( age_of_book_exact<0, as.numeric(NA), age_of_book_exact))
+all_books <- all_books %>% mutate(recent = ifelse(age_of_book_exact <366, 1, 0))
 
 #################################################################################
 #we now update the number of books in user_info for the final time
