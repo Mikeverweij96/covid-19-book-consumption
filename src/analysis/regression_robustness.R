@@ -52,8 +52,6 @@ names(weekly_per_user_complete)<-df_col_names
 count=1
 
 for (user in first_day_per_user$`reader id`){
-  print(user)
-  print(count/nrow(first_day_per_user))
   count<-count+1
   first_day<-first_day_per_user[which(first_day_per_user$`reader id`==user), 2]
   last_day<-last_day_per_user[which(last_day_per_user$`reader id`==user),2]
