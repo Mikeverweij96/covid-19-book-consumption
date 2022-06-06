@@ -22,15 +22,13 @@ all_books<- all_books %>% select (-V1) #remove variable we won't be using
 all_books$first_day_of_week_added<- floor_date(as.Date(all_books$date_added, "%Y-%m/-%d"), unit="week", week_start = 1)
 all_books$first_day_of_week_added <- as.Date(all_books$first_day_of_week_added)
 
-# filter for the time period of interest
-all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
 
 
 ################################################################################
 ################################################################################
 ################################################################################
 # start with examining the number of books added per user per week
-weekly_per_user<- all_books14 %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
+weekly_per_user<- all_books %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
 
 # create a list of all weeks between first and last time something was added
 first_day_per_user<-weekly_per_user %>% group_by(`reader id`) %>% summarise(first=min(first_day_of_week_added))
@@ -46,8 +44,6 @@ names(weekly_per_user_complete)<-df_col_names
 count=1
 
 for (user in first_day_per_user$`reader id`){
-  print(user)
-  print(count/nrow(first_day_per_user))
   count<-count+1
   first_day<-first_day_per_user[which(first_day_per_user$`reader id`==user), 2]
   last_day<-last_day_per_user[which(last_day_per_user$`reader id`==user),2]
@@ -57,6 +53,11 @@ for (user in first_day_per_user$`reader id`){
   weekly_per_user_complete<-rbind(weekly_per_user_complete,days_of_interest)
   
 }
+
+
+# filter for the time period of interest
+all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
+weekly_per_user_complete<-weekly_per_user_complete %>% filter(date > "2013-12-24" & date < "2022-01-07")
 
 
 #add the number of books read each week
@@ -90,6 +91,8 @@ user_info <- user_info %>% mutate(fanatic=ifelse(books_per_day*7>1 & days_active
 info_to_add<-user_info %>% select(user_id, fanatic)
 weekly_per_user_complete<- weekly_per_user_complete %>% left_join(info_to_add, by=c("user"= "user_id"))
 
+#remove the dummy
+weekly_per_user_complete <- weekly_per_user_complete %>% filter(!is.na(fanatic))
 
 ################################################################################
 

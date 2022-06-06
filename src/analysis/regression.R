@@ -22,15 +22,12 @@ all_books<- all_books %>% select (-V1) #remove variable we won't be using
 all_books$first_day_of_week_added<- floor_date(as.Date(all_books$date_added, "%Y-%m/-%d"), unit="week", week_start = 1)
 all_books$first_day_of_week_added <- as.Date(all_books$first_day_of_week_added)
 
-# filter for the time period of interest
-all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
-
 
 ################################################################################
 ################################################################################
 ################################################################################
 # start with examining the number of books added per user per week
-weekly_per_user<- all_books14 %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
+weekly_per_user<- all_books %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
 
 # create a list of all weeks between first and last time something was added
 first_day_per_user<-weekly_per_user %>% group_by(`reader id`) %>% summarise(first=min(first_day_of_week_added))
@@ -46,8 +43,6 @@ names(weekly_per_user_complete)<-df_col_names
 count=1
 
 for (user in first_day_per_user$`reader id`){
-  print(user)
-  print(count/nrow(first_day_per_user))
   count<-count+1
   first_day<-first_day_per_user[which(first_day_per_user$`reader id`==user), 2]
   last_day<-last_day_per_user[which(last_day_per_user$`reader id`==user),2]
@@ -83,15 +78,22 @@ weekly_per_user_complete <- weekly_per_user_complete %>% left_join(covid_stingen
 # fill the NA's:
 weekly_per_user_complete<- weekly_per_user_complete %>% replace(is.na(.), 0)
 
+
+# filter for the time period of interest
+all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
+weekly_per_user_complete<- weekly_per_user_complete %>% filter(date > "2013-12-24" & date < "2022-01-07")
+weekly_per_user_complete<-weekly_per_user_complete %>% filter(!(Country == "0")) #remove the dummy country
+
 ################################################################################
 # regression:
 # on the user level
-weekly_per_user_complete$week<-week(weekly_per_user$date)
+weekly_per_user_complete$week<-week(weekly_per_user_complete$date)
 weekly_per_user_complete$week<-as.character(weekly_per_user_complete$week)
 
 regression_nr_books <- lm((total)~ value+week+date+Country, weekly_per_user_complete)
 summary(regression_nr_books)
-write.csv2(as.data.frame(summary(rregression_nr_books)$coefficients), file = "../../gen/output/model1_qty.csv", fileEncoding = "UTF-8")
+write.csv2(as.data.frame(summary(regression_nr_books)$coefficients), file = "../../gen/output/model1_qty.csv", fileEncoding = "UTF-8")
+
 
 
 # on the country level

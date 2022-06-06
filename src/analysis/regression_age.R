@@ -23,20 +23,18 @@ user_info<-user_info %>% select(-V1)
 all_books$first_day_of_week_added<- floor_date(as.Date(all_books$date_added, "%Y-%m/-%d"), unit="week", week_start = 1)
 all_books$first_day_of_week_added <- as.Date(all_books$first_day_of_week_added)
 
-# filter for the time period of interest
-all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
 
 # filter for only users with their age defined
 user_info_to_add<-user_info%>%select(user_id, Age)
-all_books14<- all_books14 %>% left_join(user_info_to_add, by=c("reader id"="user_id"))
-all_books14<- all_books14 %>% filter(!is.na(Age))
+all_books<- all_books %>% left_join(user_info_to_add, by=c("reader id"="user_id"))
+all_books<- all_books %>% filter(!is.na(Age))
 user_info<-user_info%>%filter(!is.na(Age))
 
 ################################################################################
 ################################################################################
 ################################################################################
 # start with examining the number of books added per user per week, only looking at the people who have added their age.
-weekly_per_user<- all_books14 %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
+weekly_per_user<- all_books %>% group_by(`reader id`, first_day_of_week_added) %>% summarise(total=sum(dummy))
 user_info_to_add<-user_info%>%select(user_id, Age)
 weekly_per_user<- weekly_per_user %>% left_join(user_info_to_add, by=c("reader id"="user_id"))
 
@@ -55,8 +53,6 @@ names(weekly_per_user_complete)<-df_col_names
 count=1
 
 for (user in first_day_per_user$`reader id`){
-  print(user)
-  print(count/nrow(first_day_per_user))
   count<-count+1
   first_day<-first_day_per_user[which(first_day_per_user$`reader id`==user), 2]
   last_day<-last_day_per_user[which(last_day_per_user$`reader id`==user),2]
@@ -66,6 +62,10 @@ for (user in first_day_per_user$`reader id`){
   weekly_per_user_complete<-rbind(weekly_per_user_complete,days_of_interest)
   
 }
+
+# filter for the time period of interest
+all_books14<- all_books %>% filter(first_day_of_week_added > "2013-12-24" & first_day_of_week_added < "2022-01-07")
+weekly_per_user_complete<-weekly_per_user_complete %>% filter(date > "2013-12-24" & date < "2022-01-07")
 
 
 #add the number of books read each week
@@ -77,7 +77,7 @@ weekly_per_user_complete<- weekly_per_user_complete %>% replace(is.na(.), 0)
 
 # add the country of origin to the data
 data_to_add<-user_info%>% select(user_id,Country)
-weekly_per_user_complete<-weekly_per_user_complete%>% left_join(data_to_add, by=c("reader id"="user_id"))
+weekly_per_user_complete<-weekly_per_user_complete%>% left_join(data_to_add, by=c("user"="user_id"))
 
 
 # next, we add the weekly stringency per country to the data.
@@ -87,37 +87,37 @@ covid_stingency_long<-pivot_longer(covid_stringency, 3:34)
 # add the covid stringencies:
 covid_stingency_long$first_day_of_week<-as.Date(covid_stingency_long$first_day_of_week)
 covid_stingency_long<-covid_stingency_long%>% select(-V1) #remove what we will not use
-weekly_per_user_complete <- weekly_per_user_complete %>% left_join(covid_stingency_long, by=c("first_day_of_week_added"="first_day_of_week", "Country"="name"))
+weekly_per_user_complete <- weekly_per_user_complete %>% left_join(covid_stingency_long, by=c("date"="first_day_of_week", "Country"="name"))
 
 # fill the NA's:
 weekly_per_user_complete<- weekly_per_user_complete %>% replace(is.na(.), 0)
 
 
 #compute the age at time of adding:
-user_info_to_add<-user_info%>%select(user_id, Age)
-weekly_per_user_complete<- weekly_per_user %>% left_join(user_info_to_add, by=c("reader id"="user_id"))
+user_info_to_add<-user_info%>%select(user_id, Age, Country)
+weekly_per_user_complete<- weekly_per_user_complete %>% left_join(user_info_to_add, by=c("user"="user_id"))
 
 
 #add the age group
-weekly_per_user_complete<-weekly_per_user_complete %>% mutate(age_at_adding = Age + as.numeric(difftime(first_day_of_week_added, "2022-01-01"))/365)
+weekly_per_user_complete<-weekly_per_user_complete %>% mutate(age_at_adding = Age.y + as.numeric(difftime(date, "2022-01-01"), units='days')/365)
 weekly_per_user_complete<-weekly_per_user_complete %>% mutate(age_group = ifelse(age_at_adding<35,"low",ifelse(age_at_adding>55,"high", "middle")))
 
-
-
+#remove the dummy
+weekly_per_user_complete<-weekly_per_user_complete %>% filter(!is.na(age_group))
 
 ################################################################################
 # regression:
 # on the user level
-weekly_per_user_complete$week<-week(weekly_per_user_complete$first_day_of_week_added)
+weekly_per_user_complete$week<-week(weekly_per_user_complete$date)
 weekly_per_user_complete$week<-as.character(weekly_per_user_complete$week)
 
 #first, without the interaction, i.e. model 1, to check if we obtain similar results:
-regression_nr_books <- lm((total)~ value+week+first_day_of_week_added+Country, weekly_per_user_complete)
+regression_nr_books <- lm((total)~ value+week+date+Country.y, weekly_per_user_complete)
 summary(regression_nr_books)
 write.csv2(as.data.frame(summary(regression_nr_books)$coefficients), file = "../../gen/output/model1_age_qty.csv", fileEncoding = "UTF-8")
 
 #next, with the age interaction:
-regression_nr_books <- lm((total)~ value+week+first_day_of_week_added+Country+age_group+age_group*value, weekly_per_user_complete)
+regression_nr_books <- lm((total)~ value+week+date+Country.y+age_group+age_group*value, weekly_per_user_complete)
 summary(regression_nr_books)
 write.csv2(as.data.frame(summary(regression_nr_books)$coefficients), file = "../../gen/output/model2_age_qty.csv", fileEncoding = "UTF-8")
 
@@ -357,13 +357,3 @@ recent_per_user<-recent_per_user %>% mutate(age_group = ifelse(age_at_adding<35,
 regression_recent <- lm((recent)~ value+week+first_day_of_week_added+Country, recent_per_user)
 summary(regression_recent)
 write.csv2(as.data.frame(summary(regression_recent)$coefficients), file = "../../gen/output/model1_age_recent.csv", fileEncoding = "UTF-8")
-
-
-
-
-write.csv2(covid_stingency_long, file = "../../gen/output/covid.csv", fileEncoding = "UTF-8")
-
-
-
-
-
