@@ -14,11 +14,16 @@ To investigate the impact of COVID-19 restrictions on book consumption, we use d
 ```
 ├── README.md
 ├── makefile
+├── Verweij (2022).pdf
+├── .gitignore
+├── data
+├── gen
+|   ├── temp
+|   └── output
 └── src
     ├── analysis
     ├── data-collection
-    ├── data-preparation
-    └── pricing-app
+    └── data-preparation
 ```
 
 ## Dependencies
